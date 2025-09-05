@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local Football Tournament</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+    h1, h2 { text-align: center; }
+    section { margin-bottom: 40px; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 8px; text-align: center; }
+    button { padding: 8px 16px; margin-top: 10px; cursor: pointer; border: none; border-radius: 5px; background: #007bff; color: #fff; }
+    button:hover { background: #0056b3; }
+    input, select { padding: 6px; margin: 4px; }
+  </style>
+</head>
+<body>
+  <h1>⚽ Local Football Tournament Manager</h1>
+
+  <!-- Player Registration -->
+  <section>
+    <h2>Player Registration</h2>
+    <form id="playerForm">
+      <input type="text" id="name" placeholder="Player Name" required>
+      <input type="number" id="age" placeholder="Age" required>
+      <input type="text" id="contact" placeholder="Contact No." required>
+      <select id="position">
+        <option value="GK">Goalkeeper</option>
+        <option value="DF">Defender</option>
+        <option value="MF">Midfielder</option>
+        <option value="FW">Forward</option>
+      </select>
+      <input type="number" id="fee" placeholder="Fee Amount" required>
+      <button type="submit">Add Player</button>
+    </form>
+    <table id="playersTable">
+      <thead><tr><th>Name</th><th>Age</th><th>Contact</th><th>Position</th><th>Fee</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- Teams -->
+  <section>
+    <h2>Teams</h2>
+    <button onclick="assignTeams()">Auto Assign Teams</button>
+    <div id="teamsContainer"></div>
+  </section>
+
+  <!-- Expenditure -->
+  <section>
+    <h2>Expenditure</h2>
+    <form id="expenseForm">
+      <input type="text" id="item" placeholder="Item" required>
+      <input type="number" id="cost" placeholder="Cost ₹" required>
+      <button type="submit">Add Expense</button>
+    </form>
+    <table id="expensesTable">
+      <thead><tr><th>Item</th><th>Cost ₹</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- Dashboard -->
+  <section>
+    <h2>Dashboard</h2>
+    <p>Total Players: <span id="totalPlayers">0</span></p>
+    <p>Total Fee Collected: ₹<span id="totalFee">0</span></p>
+    <p>Total Expenditure: ₹<span id="totalExpense">0</span></p>
+    <p><b>Balance: ₹<span id="balance">0</span></b></p>
+  </section>
+
+  <!-- Fixtures -->
+  <section>
+    <h2>Fixtures & Results</h2>
+    <button onclick="generateFixtures()">Generate Fixtures</button>
+    <div id="fixtures"></div>
+  </section>
+
+  <!-- Backup -->
+  <section>
+    <h2>Backup & Restore</h2>
+    <button onclick="exportData()">Export Data</button>
+    <input type="file" id="importFile" />
+    <button onclick="importData()">Import Data</button>
+  </section>
+
+  <script>
+    let players = [];
+    let expenses = [];
+
+    // Load from LocalStorage
+    window.onload = function() {
+      if (localStorage.getItem("players")) {
+        players = JSON.parse(localStorage.getItem("players"));
+      }
+      if (localStorage.getItem("expenses")) {
+        expenses = JSON.parse(localStorage.getItem("expenses"));
+      }
+      renderPlayers();
+      renderExpenses();
+      updateDashboard();
+    }
+
+    // Save to LocalStorage
+    function saveData() {
+      localStorage.setItem("players", JSON.stringify(players));
+      localStorage.setItem("expenses", JSON.stringify(expenses));
+    }
+
+    // Player Form Submission
+    document.getElementById("playerForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const player = {
+        name: document.getElementById("name").value,
+        age: document.getElementById("age").value,
+        contact: document.getElementById("contact").value,
+        position: document.getElementById("position").value,
+        fee: parseInt(document.getElementById("fee").value)
+      };
+      players.push(player);
+      renderPlayers();
+      updateDashboard();
+      saveData();
+      this.reset();
+    });
+
+    function renderPlayers() {
+      const tbody = document.querySelector("#playersTable tbody");
+      tbody.innerHTML = "";
+      players.forEach(p => {
+        tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.age}</td><td>${p.contact}</td><td>${p.position}</td><td>₹${p.fee}</td></tr>`;
+      });
+    }
+
+    function assignTeams() {
+      if (players.length < 56) {
+        alert("At least 56 players required (8 teams × 7 players)");
+        return;
+      }
+      let shuffled = [...players].sort(() => 0.5 - Math.random());
+      let teams = [];
+      for (let i = 0; i < 8; i++) {
+        teams.push(shuffled.slice(i*7, (i+1)*7));
+      }
+      const container = document.getElementById("teamsContainer");
+      container.innerHTML = "";
+      teams.forEach((team, idx) => {
+        let html = `<h3>Team ${idx+1}</h3><ul>`;
+        team.forEach(p => { html += `<li>${p.name} (${p.position})</li>`; });
+        html += "</ul>";
+        container.innerHTML += html;
+      });
+    }
+
+    // Expense Form Submission
+    document.getElementById("expenseForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const exp = {
+        item: document.getElementById("item").value,
+        cost: parseInt(document.getElementById("cost").value)
+      };
+      expenses.push(exp);
+      renderExpenses();
+      updateDashboard();
+      saveData();
+      this.reset();
+    });
+
+    function renderExpenses() {
+      const tbody = document.querySelector("#expensesTable tbody");
+      tbody.innerHTML = "";
+      expenses.forEach(e => {
+        tbody.innerHTML += `<tr><td>${e.item}</td><td>₹${e.cost}</td></tr>`;
+      });
+    }
+
+    // Dashboard Updates
+    function updateDashboard() {
+      const totalFee = players.reduce((sum, p) => sum + p.fee, 0);
+      const totalExpense = expenses.reduce((sum, e) => sum + e.cost, 0);
+      document.getElementById("totalPlayers").textContent = players.length;
+      document.getElementById("totalFee").textContent = totalFee;
+      document.getElementById("totalExpense").textContent = totalExpense;
+      document.getElementById("balance").textContent = totalFee - totalExpense;
+    }
+
+    // Fixtures Generator
+    function generateFixtures() {
+      let fixturesHTML = "";
+      let stages = ["Quarter Final 1","Quarter Final 2","Quarter Final 3","Quarter Final 4","Semi Final 1","Semi Final 2","Final"];
+      stages.forEach(s => {
+        fixturesHTML += `<p>${s}: <input placeholder='Team A'> vs <input placeholder='Team B'> | Score: <input size='2'> - <input size='2'></p>`;
+      });
+      document.getElementById("fixtures").innerHTML = fixturesHTML;
+    }
+
+    // Export Data
+    function exportData() {
+      const data = { players, expenses };
+      const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "tournament_data.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Import Data
+    function importData() {
+      const fileInput = document.getElementById("importFile");
+      const file = fileInput.files[0];
+      if (!file) return alert("Please select a file");
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = JSON.parse(e.target.result);
+        players = data.players || [];
+        expenses = data.expenses || [];
+        renderPlayers();
+        renderExpenses();
+        updateDashboard();
+        saveData();
+      };
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>
